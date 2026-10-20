@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+﻿import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -6,6 +6,7 @@ import { InstrumentoService } from '../services/instrumento.service';
 import { LuthierService } from '../../luthier/services/luthier.service';
 import { CreateInstrumentoDto, UpdateInstrumentoDto, LuthierDto } from '@luthiers/utils';
 import { parseAuthError } from '../../../core/utils/auth-error.util';
+import { ValidationMetadataService } from '../../../shared/services/validation-metadata.service';
 
 @Component({
   selector: 'app-instrumento-form',
@@ -20,6 +21,21 @@ export class InstrumentoFormComponent implements OnInit {
   private instrumentoService = inject(InstrumentoService);
   private luthierService = inject(LuthierService);
 
+  /**
+   * ValidationMetadataService
+   *
+   * Consome o endpoint GET /meta/validation-rules do backend para obter
+   * as regras de validação de forma dinâmica, eliminando validators
+   * hardcoded neste componente (ex: Validators.max(50000) e Validators.min(0)
+   * que antes estavam fixos no código do cliente).
+   */
+  protected validationMeta = inject(ValidationMetadataService);
+
+  /**
+   * Validators padrão (fallback) usados antes do carregamento dos metadados.
+   * Após a carga do ValidationMetadataService, as mensagens de erro passam
+   * a ser geradas dinamicamente via validationMeta.getErrorMessage().
+   */
   form = this.fb.group({
     modeloMadeira: ['', Validators.required],
     dataEntrada: ['', Validators.required],
@@ -65,6 +81,9 @@ export class InstrumentoFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Carrega metadados do backend e atualiza validators dinamicamente
+    this.validationMeta.load();
+
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
       this.instrumentoId.set(Number(idParam));
@@ -168,15 +187,14 @@ export class InstrumentoFormComponent implements OnInit {
     return control ? (control.invalid && (control.dirty || control.touched)) : false;
   }
 
+  /**
+   * getFieldError — usa mensagens dinâmicas do backend quando disponíveis.
+   * Substitui mensagens hardcoded anteriores (ex: 'O valor não pode ser maior que R$ 50.000')
+   * por mensagens retornadas pelo ValidationMetadataService.
+   */
   getFieldError(field: string): string {
     const control = this.form.get(field);
     if (!control) return '';
-    
-    if (control.hasError('required')) return 'Campo obrigatório';
-    if (control.hasError('min')) return 'Valor inválido';
-    if (control.hasError('max')) return 'O valor não pode ser maior que R$ 50.000';
-    if (control.hasError('backend')) return control.getError('backend');
-    
-    return 'Campo inválido';
+    return this.validationMeta.getErrorMessage(control, 'instrumento', field);
   }
 }

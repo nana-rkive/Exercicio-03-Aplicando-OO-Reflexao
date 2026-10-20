@@ -1,10 +1,12 @@
-import { Injectable, Inject, HttpStatus } from '@nestjs/common';
+﻿import { Injectable, Inject } from '@nestjs/common';
 import type {
   LuthierRepositoryPort,
   LuthierComInstrumentos,
 } from './ports/luthier.repository.port';
 import { Luthier } from '../domain/luthier';
 import { BusinessException } from '../../../shared/exceptions/business.exception';
+import { findOrThrow } from '../../../shared/utils/find-or-throw.util';
+import { LogExecution } from '../../../shared/decorators/log-execution.decorator';
 
 @Injectable()
 export class LuthierService {
@@ -13,27 +15,17 @@ export class LuthierService {
     private readonly luthierRepo: LuthierRepositoryPort,
   ) {}
 
-  async create(
+  /**
+   * validateBusinessRules
+   *
+   * Abstrai as regras de negócio LUTHIER_002 a LUTHIER_005 em um único
+   * método privado, eliminando a duplicação entre create() e update().
+   */
+  private validateBusinessRules(
     nomeMestre: string,
     dataAbertura: Date,
-    certificada: boolean,
     bancadasNum: number,
-  ): Promise<Luthier> {
-    // LUTHIER_001: Todos os campos são obrigatórios
-    if (
-      !nomeMestre ||
-      !dataAbertura ||
-      certificada === undefined ||
-      certificada === null ||
-      bancadasNum === undefined ||
-      bancadasNum === null
-    ) {
-      throw new BusinessException(
-        'LUTHIER_001',
-        'Todos os campos são obrigatórios: nomeMestre, dataAbertura, certificada, bancadasNum.',
-      );
-    }
-
+  ): void {
     // LUTHIER_002: Mínimo de 2 bancadas
     if (bancadasNum < 2) {
       throw new BusinessException(
@@ -73,6 +65,32 @@ export class LuthierService {
         'A data de abertura não pode ser anterior ao ano de 1900.',
       );
     }
+  }
+
+  @LogExecution()
+  async create(
+    nomeMestre: string,
+    dataAbertura: Date,
+    certificada: boolean,
+    bancadasNum: number,
+  ): Promise<Luthier> {
+    // LUTHIER_001: Todos os campos são obrigatórios
+    if (
+      !nomeMestre ||
+      !dataAbertura ||
+      certificada === undefined ||
+      certificada === null ||
+      bancadasNum === undefined ||
+      bancadasNum === null
+    ) {
+      throw new BusinessException(
+        'LUTHIER_001',
+        'Todos os campos são obrigatórios: nomeMestre, dataAbertura, certificada, bancadasNum.',
+      );
+    }
+
+    // Regras LUTHIER_002 a LUTHIER_006 (reutilizadas também em update)
+    this.validateBusinessRules(nomeMestre, dataAbertura, bancadasNum);
 
     const luthier = new Luthier(
       null,
@@ -89,27 +107,22 @@ export class LuthierService {
   }
 
   async findById(id: number): Promise<Luthier | null> {
-    const luthier = await this.luthierRepo.findById(id);
-    if (!luthier)
-      throw new BusinessException(
-        'LUTHIER_007',
-        'Luthier não encontrado.',
-        HttpStatus.NOT_FOUND,
-      );
-    return luthier;
+    return findOrThrow(
+      () => this.luthierRepo.findById(id),
+      'LUTHIER_007',
+      'Luthier não encontrado.',
+    );
   }
 
   async findWithInstrumentos(id: number): Promise<LuthierComInstrumentos> {
-    const luthier = await this.luthierRepo.findByIdWithInstrumentos(id);
-    if (!luthier)
-      throw new BusinessException(
-        'LUTHIER_007',
-        'Luthier não encontrado.',
-        HttpStatus.NOT_FOUND,
-      );
-    return luthier;
+    return findOrThrow(
+      () => this.luthierRepo.findByIdWithInstrumentos(id),
+      'LUTHIER_007',
+      'Luthier não encontrado.',
+    );
   }
 
+  @LogExecution()
   async update(
     id: number,
     nomeMestre: string,
@@ -117,38 +130,15 @@ export class LuthierService {
     certificada: boolean,
     bancadasNum: number,
   ): Promise<Luthier> {
-    const luthier = await this.luthierRepo.findById(id);
-    if (!luthier)
-      throw new BusinessException(
-        'LUTHIER_007',
-        'Luthier não encontrado.',
-        HttpStatus.NOT_FOUND,
-      );
+    // Busca e valida existência — elimina duplicação do bloco findById+throw
+    const luthier = await findOrThrow(
+      () => this.luthierRepo.findById(id),
+      'LUTHIER_007',
+      'Luthier não encontrado.',
+    );
 
-    if (bancadasNum < 2) {
-      throw new BusinessException(
-        'LUTHIER_002',
-        'Uma oficina de luthier deve possuir no mínimo 2 bancadas.',
-      );
-    }
-    if (!Number.isInteger(bancadasNum)) {
-      throw new BusinessException(
-        'LUTHIER_003',
-        'A quantidade de bancadas deve ser um número inteiro.',
-      );
-    }
-    if (nomeMestre.trim().split(' ').length < 2) {
-      throw new BusinessException(
-        'LUTHIER_004',
-        'Informe o nome e sobrenome completo do mestre luthier.',
-      );
-    }
-    if (new Date(dataAbertura) > new Date()) {
-      throw new BusinessException(
-        'LUTHIER_005',
-        'A data de abertura não pode ser uma data futura.',
-      );
-    }
+    // Regras LUTHIER_002 a LUTHIER_006 centralizadas (mesmo método usado em create)
+    this.validateBusinessRules(nomeMestre, dataAbertura, bancadasNum);
 
     luthier.nomeMestre = nomeMestre;
     luthier.dataAbertura = dataAbertura;
@@ -158,27 +148,25 @@ export class LuthierService {
     return this.luthierRepo.update(luthier);
   }
 
+  @LogExecution()
   async deactivate(id: number): Promise<Luthier> {
-    const luthier = await this.luthierRepo.findById(id);
-    if (!luthier)
-      throw new BusinessException(
-        'LUTHIER_007',
-        'Luthier não encontrado.',
-        HttpStatus.NOT_FOUND,
-      );
+    const luthier = await findOrThrow(
+      () => this.luthierRepo.findById(id),
+      'LUTHIER_007',
+      'Luthier não encontrado.',
+    );
 
     luthier.certificada = false;
     return this.luthierRepo.update(luthier);
   }
 
+  @LogExecution()
   async delete(id: number): Promise<void> {
-    const luthier = await this.luthierRepo.findById(id);
-    if (!luthier)
-      throw new BusinessException(
-        'LUTHIER_007',
-        'Luthier não encontrado.',
-        HttpStatus.NOT_FOUND,
-      );
+    await findOrThrow(
+      () => this.luthierRepo.findById(id),
+      'LUTHIER_007',
+      'Luthier não encontrado.',
+    );
 
     await this.luthierRepo.delete(id);
   }

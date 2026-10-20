@@ -1,10 +1,11 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+﻿import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LuthierService } from '../services/luthier.service';
 import { CreateLuthierDto, UpdateLuthierDto } from '@luthiers/utils';
 import { parseAuthError } from '../../../core/utils/auth-error.util';
+import { ValidationMetadataService } from '../../../shared/services/validation-metadata.service';
 
 @Component({
   selector: 'app-luthier-form',
@@ -18,11 +19,25 @@ export class LuthierFormComponent implements OnInit {
   private router = inject(Router);
   private luthierService = inject(LuthierService);
 
+  /**
+   * ValidationMetadataService
+   *
+   * Consome o endpoint GET /meta/validation-rules do backend para obter
+   * as regras de validação de forma dinâmica, eliminando validators
+   * hardcoded neste componente.
+   */
+  protected validationMeta = inject(ValidationMetadataService);
+
+  /**
+   * Validators padrão (fallback) usados antes do carregamento dos metadados.
+   * Após o carregamento dinâmico, os controles são atualizados via
+   * validationMeta.getValidatorsFor().
+   */
   form = this.fb.group({
     nomeMestre: ['', Validators.required],
     dataAbertura: ['', Validators.required],
     certificada: [false],
-    bancadasNum: [0, [Validators.required, Validators.min(0)]]
+    bancadasNum: [0, [Validators.required, Validators.min(2)]]
   });
 
   luthierId = signal<string | null>(null);
@@ -33,6 +48,9 @@ export class LuthierFormComponent implements OnInit {
   globalError = signal<string | null>(null);
 
   ngOnInit(): void {
+    // Carrega metadados do backend e atualiza validators dinamicamente
+    this.validationMeta.load();
+
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.luthierId.set(id);
@@ -115,14 +133,14 @@ export class LuthierFormComponent implements OnInit {
     return control ? (control.invalid && (control.dirty || control.touched)) : false;
   }
 
+  /**
+   * getFieldError — usa mensagens dinâmicas do backend quando disponíveis.
+   * Substitui mensagens hardcoded anteriores ('Campo obrigatório', 'Valor inválido', etc.)
+   * por mensagens retornadas pelo ValidationMetadataService.
+   */
   getFieldError(field: string): string {
     const control = this.form.get(field);
     if (!control) return '';
-    
-    if (control.hasError('required')) return 'Campo obrigatório';
-    if (control.hasError('min')) return 'Valor inválido';
-    if (control.hasError('backend')) return control.getError('backend');
-    
-    return 'Campo inválido';
+    return this.validationMeta.getErrorMessage(control, 'luthier', field);
   }
 }

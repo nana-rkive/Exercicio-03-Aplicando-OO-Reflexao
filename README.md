@@ -1,6 +1,7 @@
 # Cooperativa de Luthiers — Monorepo
 
-Este repositório contém o sistema completo da **Cooperativa de Luthiers**, desenvolvido como projeto de avaliação para a **2ª VA** da disciplina de **Programação Web I** na Universidade Estadual de Goiás (UEG). 
+Este repositório contém o sistema completo da **Cooperativa de Luthiers**, desenvolvido como projeto de avaliação para a **2ª VA** da disciplina de **Programação Web II**
+Ana Laura Mesquita 
 
 O projeto adota uma arquitetura moderna de monorepo, estruturada com **pnpm workspaces** e orquestrada pelo **Turborepo**.
 
@@ -13,8 +14,6 @@ O projeto adota uma arquitetura moderna de monorepo, estruturada com **pnpm work
 - **Professor:** Guiliano Rangel
 - **Integrantes da Equipe:**
   - Ana Laura Mesquita de Souza
-  - Israel Pires Feitosa Filho
-  - Jennifer Moraes Figueiró
 
 ---
 
@@ -59,7 +58,7 @@ O monorepo está dividido em aplicações (`apps/`) e pacotes compartilhados (`p
 
 ## ⚙️ Variáveis de Ambiente
 
-O backend aceita configurações por meio de variáveis de ambiente. Há um arquivo de exemplo em [apps/backend/.env.example](file:///c:/Users/SAMSUNG/Documents/GitHub/Cooperativa-Luthiers/apps/backend/.env.example). 
+O backend aceita configurações por meio de variáveis de ambiente. Há um arquivo de exemplo em [apps/backend/.env.example](apps/backend/.env.example). 
 
 As variáveis suportadas são:
 
@@ -72,47 +71,102 @@ As variáveis suportadas são:
 
 ---
 
-## 🚀 Instruções Detalhadas de Execução
+## 🚀 Como Iniciar a Aplicação Pós-Clonagem
 
-Siga os passos abaixo para preparar o ambiente e rodar o projeto localmente.
+Siga o passo a passo detalhado abaixo para clonar, configurar e rodar o projeto localmente em sua máquina.
 
 ### Pré-requisitos
+Certifique-se de ter instalado em seu ambiente:
+- **Git**
 - **Node.js** (versão `>= 20.0.0`)
 - **PNPM** (versão `>= 9.0.0` recomendada)
+  ```bash
+  npm install -g pnpm
+  ```
 
-### Passo 1: Clonar e instalar as dependências
-Na raiz do monorepo, execute o comando abaixo para instalar as dependências de todas as aplicações e pacotes:
+---
+
+### Passo 1: Clonar o Repositório
+Abra o terminal em seu diretório de preferência e execute o comando de clonagem:
+
+```bash
+git clone https://github.com/nana-rkive/Exercicio-03-Aplicando-OO-Reflexao.git
+```
+
+Em seguida, acesse a pasta raiz do projeto clonado:
+```bash
+cd Exercicio-03-Aplicando-OO-Reflexao
+```
+
+---
+
+### Passo 2: Instalar as Dependências do Monorepo
+Como o projeto utiliza **pnpm workspaces**, todas as dependências do monorepo (backend, frontend e pacotes compartilhados) são instaladas a partir da raiz com um único comando:
+
 ```bash
 pnpm install
 ```
 
-### Passo 2: Configurar o ambiente do Backend
-1. Navegue até o diretório do backend (`apps/backend/`).
-2. Duplique o arquivo `.env.example` e renomeie-o para `.env`.
-3. Se desejar, ajuste os valores das variáveis (como a senha padrão do administrador ou a porta do servidor).
+> [!TIP]
+> **Dica para usuários de Windows (PowerShell):** Se o terminal exibir erro de permissão para rodar scripts do pnpm (`PSSecurityException`), libere a execução na sessão atual com o comando:
+> ```powershell
+> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+> ```
+> Ou utilize `pnpm.cmd install` / execute pelo Prompt de Comando (`cmd`).
 
-*(Nota: O backend possui mecanismos de fallback caso o arquivo `.env` não seja configurado, usando os valores padrões da tabela de configuração).*
+---
 
-### Passo 3: Executar o projeto
-Você pode rodar todo o ecossistema (backend + frontend) simultaneamente em modo de desenvolvimento usando o Turborepo a partir da raiz:
+### Passo 3: Configurar as Variáveis de Ambiente (Opcional)
+O backend possui mecanismos de fallback automáticos e cria um banco SQLite local automaticamente no primeiro start. 
+
+Caso queira personalizar credenciais ou portas, crie o arquivo `.env` a partir do modelo de exemplo:
+- **No Linux/macOS:**
+  ```bash
+  cp apps/backend/.env.example apps/backend/.env
+  ```
+- **No Windows (PowerShell):**
+  ```powershell
+  Copy-Item apps/backend/.env.example apps/backend/.env
+  ```
+
+---
+
+### Passo 4: Executar a Aplicação
+
+#### Opção A: Executar Backend e Frontend Simultaneamente (Recomendado)
+A partir da raiz do monorepo, utilize o **Turborepo** para subir todo o ecossistema em paralelo com um único comando:
+
 ```bash
 pnpm dev
 ```
 
-Se preferir rodar cada aplicação individualmente em terminais separados:
-- **Apenas o Backend:**
+#### Opção B: Executar em Terminais Separados
+Se preferir visualizar os logs de cada aplicação isoladamente, abra dois terminais na raiz:
+- **Terminal 1 (Backend NestJS):**
   ```bash
   pnpm --filter backend dev
   ```
-- **Apenas o Frontend:**
+- **Terminal 2 (Frontend Angular):**
   ```bash
   pnpm --filter frontend dev
   ```
 
-### Passo 4: Acessar a aplicação
-- **Frontend (Web App):** [http://localhost:4200](http://localhost:4200)
-- **Backend (API REST):** [http://localhost:3000](http://localhost:3000)
-- **Swagger (Documentação da API):** [http://localhost:3000/api](http://localhost:3000/api)
+---
+
+### Passo 5: Acessar a Aplicação e Credenciais de Acesso
+
+Após inicializar os servidores, acesse os seguintes endereços no navegador:
+
+| Serviço | URL | Descrição |
+| :--- | :--- | :--- |
+| **Frontend (Web App)** | [http://localhost:4200](http://localhost:4200) | Interface do usuário em Angular 20 |
+| **Backend (API REST)** | [http://localhost:3000](http://localhost:3000) | Servidor da API em NestJS 11 |
+| **Swagger UI** | [http://localhost:3000/api](http://localhost:3000/api) | Documentação interativa dos endpoints da API |
+
+#### 🔑 Credenciais do Usuário Administrador (Seed Automático):
+O backend executa um seed automático na inicialização criando o usuário administrador padrão:
+- **E-mail:** `admin@cooperativaluthiers.com`
+- **Senha:** `Admin@1234`
 
 ---
 
