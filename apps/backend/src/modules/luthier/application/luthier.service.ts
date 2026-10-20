@@ -15,12 +15,6 @@ export class LuthierService {
     private readonly luthierRepo: LuthierRepositoryPort,
   ) {}
 
-  /**
-   * validateBusinessRules
-   *
-   * Abstrai as regras de negócio LUTHIER_002 a LUTHIER_005 em um único
-   * método privado, eliminando a duplicação entre create() e update().
-   */
   private validateBusinessRules(
     nomeMestre: string,
     dataAbertura: Date,
