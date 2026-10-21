@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, MinLength, Matches } from 'class-validator';
+import { IsEmail, IsNotEmpty } from 'class-validator';
+import { IsValidSenha } from '../../../../shared/decorators/is-valid-senha.decorator';
 
 export class CadastroUsuarioDto {
   @ApiProperty({ description: 'Primeiro nome do usuário', example: 'João' })
@@ -20,10 +21,7 @@ export class CadastroUsuarioDto {
       'Senha do usuário (mínimo 8 caracteres, pelo menos uma letra maiúscula)',
     example: 'Senha123',
   })
-  @IsNotEmpty({ message: 'A senha é obrigatória.' })
-  @MinLength(8, { message: 'A senha deve ter no mínimo 8 caracteres.' })
-  @Matches(/[A-Z]/, {
-    message: 'A senha deve conter pelo menos uma letra maiúscula.',
-  })
+  @IsValidSenha()
+
   senha: string;
 }

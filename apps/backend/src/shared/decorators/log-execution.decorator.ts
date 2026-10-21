@@ -1,13 +1,9 @@
-﻿/**
- * Decorator @LogExecution
- *
- * Aplica o padrão Decorator sobre métodos de serviço:
+﻿
+ /* Aplica o padrão Decorator sobre métodos de serviço:
  * - Registra o nome do método e seus argumentos no console antes da execução.
  * - Registra o tempo total de execução (em ms) ao final.
  * - Em caso de erro, registra o erro e o relança, mantendo o comportamento original.
- *
- * Uso: anote qualquer método de serviço com @LogExecution()
- */
+*/
 export function LogExecution(): MethodDecorator {
   return function (
     target: object,

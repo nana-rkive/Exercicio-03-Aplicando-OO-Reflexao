@@ -16,18 +16,7 @@ export class InstrumentoService {
     private readonly luthierRepo: LuthierRepositoryPort,
   ) {}
 
-  /**
-   * validateInstrumentoRules
-   *
-   * Abstrai as regras de negócio INSTRUMENTO_002, INSTRUMENTO_003 e
-   * INSTRUMENTO_004 em um único método privado, eliminando a duplicação
-   * entre create() e update().
-   *
-   * @param dataEntrada    Data de entrada do instrumento
-   * @param luthierAbertura Data de abertura do luthier (para INSTRUMENTO_002)
-   * @param custoReparo    Custo do reparo
-   * @param reparoConcluido Status do reparo
-   */
+
   private validateInstrumentoRules(
     dataEntrada: Date,
     luthierAbertura: Date,
